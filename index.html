@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tembak Rantai Makanan</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:#06231c;font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;color:#fff}
+#stage{position:fixed;inset:0}
+#vid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);filter:brightness(.72) saturate(1.1);background:#0b3b2e}
+#cv{position:absolute;inset:0;z-index:5;pointer-events:none}
+.hud{position:absolute;left:0;right:0;top:0;z-index:2;padding:10px 18px;display:flex;justify-content:space-between;align-items:center;gap:12px;background:linear-gradient(#000b,#0000);font-weight:800;font-size:clamp(14px,2.1vw,24px);text-shadow:0 2px 4px #000}
+#tm{min-width:64px;text-align:center;padding:2px 12px;border-radius:20px;background:#ffb703;color:#3b1d00;text-shadow:none}
+#tbw{position:absolute;left:0;right:0;top:0;height:7px;z-index:3;background:#0006}
+#tb{height:100%;width:100%;background:linear-gradient(90deg,#22c55e,#ffb703,#ef4444)}
+#qbox{position:absolute;z-index:2;left:50%;top:clamp(52px,9vh,84px);transform:translateX(-50%);width:min(92vw,980px);padding:14px 22px;border-radius:18px;background:#052e22e6;border:3px solid #ffb703;text-align:center;font-weight:800;font-size:clamp(16px,2.6vw,30px);line-height:1.3;text-shadow:0 2px 3px #0008}
+#st{position:absolute;z-index:2;left:50%;bottom:14px;transform:translateX(-50%);padding:6px 18px;border-radius:20px;font-weight:800;font-size:clamp(13px,1.8vw,20px);background:#000a;border:2px solid #fff6;white-space:nowrap}
+#st.ready{border-color:#22ff66;color:#22ff66}
+#st.reload{border-color:#ffb020;color:#ffb020}
+#st.nohand{border-color:#ef4444;color:#ff8888}
+.ov{position:absolute;inset:0;z-index:3;display:none;align-items:center;justify-content:center;background:#031a14e8;padding:16px;overflow:auto}
+.panel{width:min(94vw,860px);background:#0a3d2e;border:4px solid #ffb703;border-radius:24px;padding:clamp(14px,3vw,28px);text-align:center;box-shadow:0 12px 40px #000a}
+h1{font-size:clamp(22px,4vw,40px);color:#ffb703;margin-bottom:6px}
+.sub{opacity:.9;margin-bottom:14px;font-size:clamp(13px,1.8vw,18px)}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:12px 0}
+.step{background:#052e22;border:2px solid #1f7a5c;border-radius:16px;padding:12px 8px}
+.step .ic{font-size:clamp(34px,6vw,54px);line-height:1.1}
+.step b{display:block;margin:4px 0;color:#ffb703}
+.step small{font-size:clamp(12px,1.5vw,15px);opacity:.92;line-height:1.35;display:block}
+.tag{display:inline-block;margin-top:6px;padding:2px 10px;border-radius:12px;font-weight:800;font-size:13px;background:#22c55e;color:#032}
+.tag.o{background:#ffb703;color:#3b1d00}.tag.r{background:#ef4444;color:#fff}
+.rules{font-size:clamp(12px,1.6vw,16px);margin:8px 0 14px;opacity:.95}
+button{font:inherit;font-weight:900;font-size:clamp(16px,2.4vw,24px);padding:12px 34px;border:0;border-radius:40px;background:#ffb703;color:#3b1d00;cursor:pointer;box-shadow:0 5px 0 #b57f00}
+button:active{transform:translateY(3px);box-shadow:0 2px 0 #b57f00}
+#msg{margin-top:10px;min-height:20px;font-size:14px;color:#ffd77a}
+#bigsc{font-size:clamp(40px,9vw,88px);color:#ffb703;font-weight:900}
+#res{font-size:clamp(16px,2.6vw,26px);margin:6px 0 12px}
+#hint{font-size:13px;opacity:.85;margin-top:10px}
+</style>
+</head>
+<body>
+<div id="stage">
+  <video id="vid" playsinline muted></video>
+  <div id="tbw"><div id="tb"></div></div>
+  <div class="hud">
+    <div>⭐ <span id="sc">0</span></div>
+    <div id="qn">Soal 1/10</div>
+    <div id="tm">20</div>
+    <div id="lv">❤️❤️❤️</div>
+  </div>
+  <div id="qbox"><span id="qt"></span></div>
+  <div id="st" class="reload">Memuat…</div>
+</div>
+<canvas id="cv"></canvas>
+
+<div class="ov" id="modal" style="display:flex">
+  <div class="panel">
+    <h1>🎯 Tembak Rantai Makanan</h1>
+    <div class="sub">IPA Kelas 5 SD • Bidik jawaban yang benar dengan tanganmu!</div>
+    <div class="steps">
+      <div class="step"><div class="ic">☝️</div><b>1. Bidik</b><small>Luruskan jari telunjuk ke layar. Titik bidik mengikuti ujung telunjuk.</small></div>
+      <div class="step"><div class="ic">👍</div><b>2. Siap</b><small>Biarkan ibu jari rileks dan terangkat ke atas.</small><span class="tag">READY</span></div>
+      <div class="step"><div class="ic">💥</div><b>3. Tembak!</b><small>Turunkan ibu jari ke bawah atau kepalkan tangan sedikit. DOR!</small><span class="tag r">DOR!</span></div>
+      <div class="step"><div class="ic">🔄</div><b>4. Isi ulang</b><small>Angkat ibu jari lagi ke atas untuk menembak berikutnya.</small><span class="tag o">RELOAD</span></div>
+    </div>
+    <div class="rules">10 soal • 20 detik per soal • 3 nyawa ❤️ (berkurang bila salah tembak atau waktu habis) • Berdirilah agar tangan terlihat jelas di kamera.</div>
+    <button id="go">▶ Mulai Main</button>
+    <div id="msg"></div>
+    <div id="hint">Tanpa kamera? Game tetap bisa dimainkan dengan mouse (klik untuk menembak).</div>
+  </div>
+</div>
+
+<div class="ov" id="over">
+  <div class="panel">
+    <h1 id="ovt">Game Over</h1>
+    <div>Skor Akhir</div>
+    <div id="bigsc">0</div>
+    <div id="res"></div>
+    <button id="again">🔁 Main Lagi</button>
+    <div id="hint" style="margin-top:12px">Tembak tombol ini dengan jarimu atau klik dengan mouse.</div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.js" crossorigin="anonymous"></script>
+<script>
+"use strict";
+/* ===== BANK SOAL (10 soal, IPA kelas 5: Rantai Makanan) ===== */
+const Q=[
+ {q:"Makhluk hidup yang dapat membuat makanannya sendiri melalui fotosintesis disebut …",a:["Produsen","Konsumen","Pengurai","Predator"],c:0},
+ {q:"Pada rantai makanan padi → tikus → ular → elang, yang berperan sebagai produsen adalah …",a:["Padi","Tikus","Ular","Elang"],c:0},
+ {q:"Hewan yang hanya makan tumbuhan disebut …",a:["Karnivora","Herbivora","Omnivora","Produsen"],c:1},
+ {q:"Singa dan harimau adalah hewan pemakan daging. Hewan seperti ini disebut …",a:["Herbivora","Omnivora","Karnivora","Dekomposer"],c:2},
+ {q:"Ayam memakan biji-bijian dan cacing. Ayam termasuk …",a:["Herbivora","Karnivora","Omnivora","Produsen"],c:2},
+ {q:"Jamur dan bakteri yang menguraikan sisa makhluk hidup yang telah mati disebut …",a:["Pengurai","Produsen","Karnivora","Konsumen I"],c:0},
+ {q:"Sumber energi utama dalam rantai makanan berasal dari …",a:["Air","Tanah","Matahari","Angin"],c:2},
+ {q:"Rumput → belalang → katak → ular. Konsumen tingkat II dalam rantai makanan ini adalah …",a:["Rumput","Belalang","Katak","Ular"],c:2},
+ {q:"Jika semua ular di sawah punah, jumlah tikus akan …",a:["Meningkat","Menurun","Tetap sama","Hilang"],c:0},
+ {q:"Tanda panah pada rantai makanan menunjukkan …",a:["Arah angin","Aliran energi dan makanan","Jarak antar hewan","Arah hewan berlari"],c:1}
+];
+const TIME=20;
+/* ===== DOM & STATE ===== */
+const $=id=>document.getElementById(id);
+const cv=$("cv"),cx=cv.getContext("2d"),vid=$("vid"),stage=$("stage");
+let W=0,H=0,R=100;
+function rs(){W=cv.width=innerWidth;H=cv.height=innerHeight;R=Math.min(W/9.5,H/5.5)}
+addEventListener("resize",rs);rs();
+const S={phase:"menu",score:0,lives:3,idx:0,t:TIME,targets:[],ready:false,shake:0,flash:0,waitUntil:0,parts:[],rings:[],floats:[]};
+const P={x:innerWidth/2,y:innerHeight/2,tx:innerWidth/2,ty:innerHeight/2};
+let useHand=false,hands=null,ac=null,lastHand=0,busy=false,stMode="";
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+
+/* ===== AUDIO (synth, tanpa file eksternal) ===== */
+function tone(f,d,type,v,t0,f2){if(!ac)return;const T=ac.currentTime+(t0||0),o=ac.createOscillator(),g=ac.createGain();o.type=type||"sine";o.frequency.setValueAtTime(f,T);if(f2)o.frequency.exponentialRampToValueAtTime(f2,T+d);g.gain.setValueAtTime(v||.2,T);g.gain.exponentialRampToValueAtTime(.001,T+d);o.connect(g);g.connect(ac.destination);o.start(T);o.stop(T+d+.02)}
+function bang(){if(!ac)return;const n=ac.sampleRate*.25|0,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/n,3);const s=ac.createBufferSource(),g=ac.createGain();s.buffer=b;g.gain.value=.5;s.connect(g);g.connect(ac.destination);s.start();tone(180,.15,"square",.2,0,40)}
+const sndOk=()=>{tone(120,.3,"sine",.4,0,30);tone(660,.12,"triangle",.25,0);tone(880,.12,"triangle",.25,.1);tone(1320,.25,"triangle",.25,.2)};
+const sndBad=()=>{tone(120,.3,"sine",.4,0,30);tone(220,.4,"sawtooth",.2,.05,80)};
+
+/* ===== GAME LOGIC ===== */
+function loadQ(){
+  const q=Q[S.idx];
+  const o=shuffle(q.a.map((t,i)=>({t,ok:i===q.c})));
+  S.targets=o.map((e,i)=>({t:e.t,ok:e.ok,i,st:0,x:W/2,y:H/2}));
+  S.t=TIME;S.phase="play";hud();
+}
+function start(){
+  S.score=0;S.lives=3;S.idx=0;S.ready=false;S.parts=[];S.rings=[];S.floats=[];
+  $("over").style.display="none";loadQ();
+}
+function hud(){
+  $("sc").textContent=S.score;
+  $("lv").textContent="❤️".repeat(S.lives)+"🖤".repeat(3-S.lives);
+  $("qn").textContent="Soal "+Math.min(S.idx+1,Q.length)+"/"+Q.length;
+  $("qt").textContent=Q[Math.min(S.idx,Q.length-1)].q;
+}
+function reveal(){S.targets.forEach(t=>{if(t.ok&&t.st===0)t.st=1})}
+function explode(x,y,col){
+  for(let i=0;i<45;i++){const a=Math.random()*6.283,s=140+Math.random()*420;S.parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,l:1,c:col[i%col.length],r:3+Math.random()*7})}
+  S.rings.push({x,y,r:R*.4,l:1,c:col[0]});
+}
+function hit(t){
+  if(t.ok){
+    const pts=10+Math.ceil(S.t);S.score+=pts;t.st=1;sndOk();
+    explode(t.x,t.y,["#22c55e","#bbf7d0","#ffb703","#fff"]);S.floats.push({x:t.x,y:t.y-R,s:"+"+pts,l:1.4,c:"#7CFF9B"});S.shake=14;
+  }else{
+    S.lives--;t.st=2;sndBad();reveal();
+    explode(t.x,t.y,["#ef4444","#fca5a5","#ffb703","#fff"]);S.floats.push({x:t.x,y:t.y-R,s:"💔 Salah",l:1.4,c:"#ff8a8a"});S.shake=20;
+  }
+  hud();S.phase="wait";S.waitUntil=performance.now()+1600;
+}
+function timeout(){
+  S.lives--;sndBad();reveal();S.floats.push({x:W/2,y:H*.45,s:"⏰ Waktu habis!",l:1.6,c:"#ffd77a"});S.shake=10;
+  hud();S.phase="wait";S.waitUntil=performance.now()+1800;
+}
+function nextQ(){
+  S.idx++;
+  if(S.lives<=0||S.idx>=Q.length)return finish();
+  loadQ();
+}
+function finish(){
+  S.phase="over";S.idx=Math.min(S.idx,Q.length-1);
+  const win=S.lives>0;
+  $("ovt").textContent=win?"🎉 Misi Selesai!":"💀 Game Over";
+  $("bigsc").textContent=S.score;
+  $("res").textContent=win?"Hebat! Kamu menyelesaikan semua soal rantai makanan.":"Nyawa habis. Coba lagi dan pelajari rantai makanan!";
+  $("over").style.display="flex";
+}
+function shoot(x,y){
+  if(S.phase==="over"){
+    bang();S.flash=1;
+    const b=$("again").getBoundingClientRect();
+    if(x>b.left&&x<b.right&&y>b.top&&y<b.bottom)start();
+    return;
+  }
+  if(S.phase!=="play")return;
+  bang();S.flash=1;S.shake=Math.max(S.shake,5);
+  for(let i=S.targets.length-1;i>=0;i--){
+    const t=S.targets[i];
+    if(Math.hypot(x-t.x,y-t.y)<R*1.05){hit(t);return}
+  }
+}
+
+/* ===== INPUT: MediaPipe Hands ===== */
+function onRes(r){
+  const l=r.multiHandLandmarks&&r.multiHandLandmarks[0];
+  if(!l)return;
+  lastHand=performance.now();
+  const D=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+  const sc=D(l[0],l[9])||.1;
+  const d=D(l[4],l[5])/sc;                       /* jarak ujung ibu jari ke pangkal telunjuk */
+  const curled=[[8,6],[12,10],[16,14],[20,18]].every(p=>D(l[p[0]],l[0])<D(l[p[1]],l[0])); /* kepalan */
+  const open=d>.62&&!curled;                     /* ibu jari terangkat = READY */
+  if(open){                                      /* pointer hanya bergerak saat siap (anti geser saat menembak) */
+    const vw=vid.videoWidth||640,vh=vid.videoHeight||480,s=Math.max(W/vw,H/vh);
+    P.tx=Math.min(W,Math.max(0,(1-l[8].x)*vw*s-(vw*s-W)/2));
+    P.ty=Math.min(H,Math.max(0,l[8].y*vh*s-(vh*s-H)/2));
+    S.ready=true;
+  }else if(S.ready&&(d<.45||curled)){            /* ibu jari turun / kepalan = TEMBAK */
+    S.ready=false;shoot(P.x,P.y);
+  }
+}
+async function initCam(){
+  const stream=await navigator.mediaDevices.getUserMedia({video:{width:640,height:480,facingMode:"user"},audio:false});
+  vid.srcObject=stream;await vid.play();
+  hands=new Hands({locateFile:f=>"https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/"+f});
+  hands.setOptions({maxNumHands:1,modelComplexity:0,minDetectionConfidence:.6,minTrackingConfidence:.5});
+  hands.onResults(onRes);
+  await hands.initialize();
+}
+/* fallback mouse */
+addEventListener("mousemove",e=>{if(!useHand){P.tx=P.x=e.clientX;P.ty=P.y=e.clientY}});
+addEventListener("mousedown",e=>{if(!useHand&&S.phase==="play")shoot(e.clientX,e.clientY)});
+$("again").onclick=start;
+$("go").onclick=async()=>{
+  $("go").disabled=true;$("msg").textContent="Memuat kamera & model tangan… (izinkan akses kamera)";
+  try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();ac.resume()}catch(e){}
+  try{const p=document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();if(p&&p.catch)p.catch(()=>{})}catch(e){}
+  try{await initCam();useHand=true}
+  catch(e){$("msg").textContent="Kamera/model tidak tersedia → mode mouse (klik untuk menembak).";await new Promise(r=>setTimeout(r,1600))}
+  $("modal").style.display="none";start();
+};
+
+/* ===== RENDER ===== */
+function wrap(t,maxW){
+  const w=t.split(" "),L=[];let c="";
+  for(const x of w){const n=c?c+" "+x:x;if(cx.measureText(n).width>maxW&&c){L.push(c);c=x}else c=n}
+  L.push(c);return L;
+}
+function drawT(t,now){
+  const r=R,dim=S.phase==="wait"&&t.st===0;
+  cx.save();cx.translate(t.x,t.y);cx.globalAlpha=dim?.45:1;
+  let c1="#fff7e0",c2="#ffb703";
+  if(t.st===1){c1="#d9ffe0";c2="#16a34a"}else if(t.st===2){c1="#ffd6d6";c2="#dc2626"}
+  const g=cx.createRadialGradient(-r*.3,-r*.35,r*.1,0,0,r);g.addColorStop(0,c1);g.addColorStop(1,c2);
+  cx.fillStyle="#0007";cx.beginPath();cx.arc(4,8,r,0,6.283);cx.fill();
+  cx.fillStyle=g;cx.beginPath();cx.arc(0,0,r,0,6.283);cx.fill();
+  cx.lineWidth=r*.09;cx.strokeStyle="#fff";cx.stroke();
+  cx.lineWidth=r*.035;cx.strokeStyle="#00000030";cx.beginPath();cx.arc(0,0,r*.8,0,6.283);cx.stroke();
+  const fs=Math.round(r*.22);cx.font="900 "+fs+"px 'Trebuchet MS',system-ui,sans-serif";
+  cx.textAlign="center";cx.textBaseline="middle";cx.fillStyle="#3b1d00";
+  const L=wrap(t.t,r*1.5),lh=fs*1.15,y0=-(L.length-1)*lh/2;
+  L.forEach((s,i)=>cx.fillText(s,0,y0+i*lh));
+  cx.restore();
+}
+function crosshair(){
+  const ok=!useHand||S.ready,col=ok?"#22ff66":"#ffb020",r=Math.max(22,R*.26);
+  cx.save();cx.translate(P.x,P.y);cx.lineWidth=4;cx.strokeStyle="#000a";
+  for(let k=0;k<2;k++){
+    if(k)cx.strokeStyle=col,cx.lineWidth=2.5;
+    cx.beginPath();cx.arc(0,0,r,0,6.283);
+    cx.moveTo(-r*1.5,0);cx.lineTo(-r*.4,0);cx.moveTo(r*.4,0);cx.lineTo(r*1.5,0);
+    cx.moveTo(0,-r*1.5);cx.lineTo(0,-r*.4);cx.moveTo(0,r*.4);cx.lineTo(0,r*1.5);cx.stroke();
+  }
+  cx.fillStyle=col;cx.beginPath();cx.arc(0,0,3.5,0,6.283);cx.fill();
+  if(S.flash>0){cx.globalAlpha=S.flash;cx.strokeStyle="#fff";cx.lineWidth=6;cx.beginPath();cx.arc(0,0,r*(1.2+(1-S.flash)*1.8),0,6.283);cx.stroke()}
+  cx.restore();
+}
+function setStatus(){
+  let m,c;
+  if(S.phase==="menu"){return}
+  if(!useHand){m="🖱️ Mode mouse: arahkan & klik untuk menembak";c="ready"}
+  else if(performance.now()-lastHand>700){m="✋ Tangan tidak terdeteksi — tunjukkan tangan ke kamera";c="nohand"}
+  else if(S.ready){m="● READY — turunkan ibu jari untuk menembak";c="ready"}
+  else{m="🔄 RELOAD — angkat ibu jari ke atas";c="reload"}
+  const k=c+m;if(k!==stMode){stMode=k;const e=$("st");e.textContent=m;e.className=c}
+}
+
+/* ===== MAIN LOOP ===== */
+let last=performance.now();
+function loop(now){
+  requestAnimationFrame(loop);
+  const dt=Math.min((now-last)/1000,.05);last=now;
+  if(useHand&&!busy&&vid.readyState>=2){busy=true;hands.send({image:vid}).catch(()=>{}).then(()=>{busy=false})}
+  /* pointer: Lerp agar halus */
+  if(useHand){const k=1-Math.pow(.0005,dt);P.x+=(P.tx-P.x)*k;P.y+=(P.ty-P.y)*k}
+  /* waktu */
+  if(S.phase==="play"){S.t-=dt;if(S.t<=0){S.t=0;timeout()}}
+  else if(S.phase==="wait"&&now>=S.waitUntil)nextQ();
+  $("tm").textContent=Math.ceil(S.t);$("tb").style.width=(S.t/TIME*100)+"%";
+  /* target melayang */
+  const tt=now/1000;
+  S.targets.forEach(t=>{
+    t.x=W*(.14+.72*t.i/3)+Math.sin(tt*.8+t.i*2)*W*.022;
+    t.y=H*(t.i%2?.76:.6)+Math.sin(tt*1.1+t.i*1.7)*H*.03;
+  });
+  /* shake */
+  if(S.shake>.3){stage.style.transform="translate("+((Math.random()-.5)*S.shake)+"px,"+((Math.random()-.5)*S.shake)+"px)";S.shake*=.86}
+  else if(S.shake){S.shake=0;stage.style.transform=""}
+  S.flash=Math.max(0,S.flash-dt*5);
+  /* gambar */
+  cx.clearRect(0,0,W,H);
+  if(S.phase==="play"||S.phase==="wait")S.targets.forEach(t=>drawT(t,now));
+  for(let i=S.rings.length-1;i>=0;i--){
+    const o=S.rings[i];o.r+=dt*R*5;o.l-=dt*2.2;
+    if(o.l<=0){S.rings.splice(i,1);continue}
+    cx.globalAlpha=o.l;cx.strokeStyle=o.c;cx.lineWidth=8*o.l;cx.beginPath();cx.arc(o.x,o.y,o.r,0,6.283);cx.stroke();
+  }
+  for(let i=S.parts.length-1;i>=0;i--){
+    const p=S.parts[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=500*dt;p.l-=dt*1.4;
+    if(p.l<=0){S.parts.splice(i,1);continue}
+    cx.globalAlpha=p.l;cx.fillStyle=p.c;cx.beginPath();cx.arc(p.x,p.y,p.r*p.l+1,0,6.283);cx.fill();
+  }
+  cx.globalAlpha=1;
+  for(let i=S.floats.length-1;i>=0;i--){
+    const f=S.floats[i];f.y-=dt*50;f.l-=dt;
+    if(f.l<=0){S.floats.splice(i,1);continue}
+    cx.globalAlpha=Math.min(1,f.l);cx.font="900 "+Math.round(R*.42)+"px 'Trebuchet MS',system-ui,sans-serif";cx.textAlign="center";cx.textBaseline="middle";
+    cx.lineWidth=6;cx.strokeStyle="#000c";cx.strokeText(f.s,f.x,f.y);cx.fillStyle=f.c;cx.fillText(f.s,f.x,f.y);
+  }
+  cx.globalAlpha=1;
+  if(S.phase!=="menu")crosshair();
+  setStatus();
+}
+requestAnimationFrame(loop);
+hud();
+</script>
+</body>
+</html>
